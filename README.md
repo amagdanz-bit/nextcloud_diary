@@ -1,3 +1,9 @@
+### Archive notice
+I think, after 5 years of trying to keep this alive, it's time to just stop. Please export your data as markdown if you still can or go into the database to get your data out. I thought I could just update the app every six months
+but the pipeline is very unstable and I sometimes had to spend hours to make a release. I also stopped developing in PHP years ago. The whole idea of storing the data in the database was a mistake from the beginning and I should
+have used the file system instead. But the main reason for me to stop is my lack of skills when it comes to the frontend part and the lack of help there. I also don't want to use AI to fix that. Somebody can probably
+prompt their way to a better version of this app in an afternoon with enough tokens, but I am not that kind of guy.
+
 # Diary
 
 A (currently) very simple diary for Nextcloud
