@@ -3,83 +3,83 @@ name: Build and publish app release
 on:
   push:
     tags:
-      - 'v.*'
+      - 'v*'
 
 env:
   APP_NAME: diary
 
+permissions:
+  contents: write
+
 jobs:
   build_and_publish:
-    environment: release
     runs-on: ubuntu-latest
-    name: "Release: build, sign and upload the app"
-    strategy:
-      matrix:
-        php-versions: [ '8.3' ]
-        nextcloud: [ 'stable31' ]
-        database: [ 'sqlite' ]
+    name: "Release: build the app and attach it to a GitHub release"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          path: ${{ env.APP_NAME }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
-          extensions: pdo_sqlite,pdo_mysql,pdo_pgsql,gd,zip
+          php-version: '8.3'
+          extensions: gd,mbstring,xml,zip
           coverage: none
 
-      - name: Set up server Sqlite
-        uses: SMillerDev/nextcloud-actions/setup-nextcloud@fae87e29aa7cdf1ea0b8033c67f60e75b10be2cd
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          cron: false
-          version: ${{ matrix.nextcloud }}
-          database-type: ${{ matrix.database }}
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ env.APP_NAME }}/package-lock.json
 
-      - name: Prime app build
-        run: make
-
-      - name: Configure server with app
-        uses: SMillerDev/nextcloud-actions/setup-nextcloud-app@fae87e29aa7cdf1ea0b8033c67f60e75b10be2cd
-        with:
-          app: ${{ env.APP_NAME }}
-          check-code: false
-
-      - name: Create signed release archive
+      - name: Check that tag and app version match
+        working-directory: ${{ env.APP_NAME }}
         run: |
-          cd ../server/apps/${{ env.APP_NAME }} && make appstore
+          app_version=$(sed -n 's|.*<version>\(.*\)</version>.*|\1|p' appinfo/info.xml)
+          if [ "v${app_version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match version ${app_version} in appinfo/info.xml"
+            exit 1
+          fi
+
+      - name: Install PHP dependencies
+        working-directory: ${{ env.APP_NAME }}
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --classmap-authoritative --no-interaction
+
+      - name: Build frontend
+        working-directory: ${{ env.APP_NAME }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Create release archive
+        run: |
+          archive="${APP_NAME}-${GITHUB_REF_NAME#v}.tar.gz"
+          tar czf "$archive" --owner=0 --group=0 --exclude-vcs \
+            --exclude="${APP_NAME}/node_modules" \
+            --exclude="${APP_NAME}/tests" \
+            --exclude="${APP_NAME}/tools" \
+            --exclude="${APP_NAME}/screenshots" \
+            --exclude="${APP_NAME}/src" \
+            --exclude="${APP_NAME}/Makefile" \
+            --exclude="${APP_NAME}/phpunit*.xml" \
+            --exclude="${APP_NAME}/composer.*" \
+            --exclude="${APP_NAME}/package*.json" \
+            --exclude="${APP_NAME}/*.config.js" \
+            --exclude="${APP_NAME}/js/*.map" \
+            --exclude="${APP_NAME}/.*" \
+            "${APP_NAME}"
+          sha256sum "$archive" > "$archive.sha256"
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+
+      - name: Create GitHub release
         env:
-          app_private_key: ${{ secrets.APP_PRIVATE_KEY }}
-          app_public_crt: ${{ secrets.APP_PUBLIC_CRT }}
-
-      - name: Read release.md and use it as a body of new release
-        id: read_release
-        shell: bash
+          GH_TOKEN: ${{ github.token }}
         run: |
-          r=$(cat ../server/apps/${{ env.APP_NAME }}/RELEASE.md)                      
-          r="${r//'%'/'%25'}"                                                         
-          r="${r//$'\n'/'%0A'}"                                                       
-          r="${r//$'\r'/'%0D'}"                                                        
-          echo "RELEASE_BODY=$r" >> $GITHUB_OUTPUT
-
-      - name: Upload app tarball to release
-        uses: svenstaro/upload-release-action@v2
-        id: attach_to_release
-        with:
-          file: ../server/apps/${{ env.APP_NAME }}/build/artifacts/appstore/${{ env.APP_NAME }}.tar.gz
-          asset_name: ${{ env.APP_NAME }}.tar.gz
-          tag: ${{ github.ref }}
-          overwrite: true
-          body: |
-            ${{ steps.read_release.outputs.RELEASE_BODY }}
-
-      - name: Upload app to Nextcloud appstore
-        uses: R0Wi/nextcloud-appstore-push-action@v1
-        with:
-          app_name: ${{ env.APP_NAME }}
-          appstore_token: ${{ secrets.APPSTORE_TOKEN }}
-          download_url: ${{ steps.attach_to_release.outputs.browser_download_url }}
-          app_private_key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Delete crt and key from local storage
-        run: rm -f ~/.nextcloud/certificates/*
+          gh release create "${GITHUB_REF_NAME}" "${ARCHIVE}" "${ARCHIVE}.sha256" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file "${APP_NAME}/RELEASE.md" \
+            --verify-tag
