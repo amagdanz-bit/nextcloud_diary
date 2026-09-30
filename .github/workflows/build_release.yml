@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+  # Manual start: creates the tag v<version from appinfo/info.xml> on the selected branch
+  workflow_dispatch:
 
 env:
   APP_NAME: diary
@@ -35,14 +37,20 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ env.APP_NAME }}/package-lock.json
 
-      - name: Check that tag and app version match
+      - name: Determine release tag
         working-directory: ${{ env.APP_NAME }}
         run: |
           app_version=$(sed -n 's|.*<version>\(.*\)</version>.*|\1|p' appinfo/info.xml)
-          if [ "v${app_version}" != "${GITHUB_REF_NAME}" ]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} does not match version ${app_version} in appinfo/info.xml"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            if [ "v${app_version}" != "${GITHUB_REF_NAME}" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match version ${app_version} in appinfo/info.xml"
+              exit 1
+            fi
+          elif git ls-remote --exit-code --tags origin "refs/tags/v${app_version}" > /dev/null; then
+            echo "::error::Tag v${app_version} already exists, bump the version in appinfo/info.xml first"
             exit 1
           fi
+          echo "RELEASE_TAG=v${app_version}" >> "$GITHUB_ENV"
 
       - name: Install PHP dependencies
         working-directory: ${{ env.APP_NAME }}
@@ -56,7 +64,7 @@ jobs:
 
       - name: Create release archive
         run: |
-          archive="${APP_NAME}-${GITHUB_REF_NAME#v}.tar.gz"
+          archive="${APP_NAME}-${RELEASE_TAG#v}.tar.gz"
           tar czf "$archive" --owner=0 --group=0 --exclude-vcs \
             --exclude="${APP_NAME}/node_modules" \
             --exclude="${APP_NAME}/tests" \
@@ -78,8 +86,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" "${ARCHIVE}" "${ARCHIVE}.sha256" \
+          # Creates the tag on the built commit if it does not exist yet (manual start)
+          gh release create "${RELEASE_TAG}" "${ARCHIVE}" "${ARCHIVE}.sha256" \
             --repo "${GITHUB_REPOSITORY}" \
-            --title "${GITHUB_REF_NAME}" \
-            --notes-file "${APP_NAME}/RELEASE.md" \
-            --verify-tag
+            --target "${GITHUB_SHA}" \
+            --title "${RELEASE_TAG}" \
+            --notes-file "${APP_NAME}/RELEASE.md"
