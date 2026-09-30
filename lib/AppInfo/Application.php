@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OCA\Diary\AppInfo;
 
 use OCA\Diary\Listener\UserDeletedListener;
@@ -11,17 +13,20 @@ use OCP\User\Events\UserDeletedEvent;
 
 class Application extends App implements IBootstrap
 {
-    /** @var string */
-    public const APP_ID = 'diary';
+    public const string APP_ID = 'diary';
 
-    public function __construct()
+    public function __construct(array $urlParams = [])
     {
-        parent::__construct(self::APP_ID);
+        parent::__construct(self::APP_ID, $urlParams);
     }
 
     public function register(IRegistrationContext $context): void
     {
-        include_once __DIR__.'/../../vendor/autoload.php';//TODO Check if this is needed at all
+        // Load the third party libraries (dompdf, commonmark, libmergepdf)
+        $autoload = __DIR__.'/../../vendor/autoload.php';
+        if (is_file($autoload)) {
+            include_once $autoload;
+        }
         $context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
     }
 

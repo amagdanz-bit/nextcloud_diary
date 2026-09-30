@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OCA\Diary\Tests\Integration\Controller;
 
 use OCP\AppFramework\App;
@@ -18,9 +20,9 @@ class AppInstalledTest extends TestCase
         $this->container = $app->getContainer();
     }
 
-    public function testAppInstalled()
+    public function testAppInstalled(): void
     {
-        $appManager = $this->container->query('OCP\App\IAppManager');
+        $appManager = $this->container->get('OCP\App\IAppManager');
         $this->assertTrue($appManager->isInstalled('diary'));
     }
 

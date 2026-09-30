@@ -11,17 +11,15 @@ use OCP\EventDispatcher\IEventListener;
 use OCP\User\Events\UserDeletedEvent;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @template-implements IEventListener<UserDeletedEvent>
+ */
 class UserDeletedListener implements IEventListener
 {
-    /** @var LoggerInterface */
-    private $logger;
-    /** @var EntryMapper */
-    private $mapper;
-
-    public function __construct(EntryMapper $mapper, LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-        $this->mapper = $mapper;
+    public function __construct(
+        private readonly EntryMapper $mapper,
+        private readonly LoggerInterface $logger,
+    ) {
     }
 
     public function handle(Event $event): void
@@ -30,11 +28,12 @@ class UserDeletedListener implements IEventListener
             return;
         }
 
+        $uid = $event->getUser()->getUID();
         try {
-            $deletedEntries = $this->mapper->deleteAllEntriesForUser($event->getUser()->getUID());
-            $this->logger->info("All $deletedEntries diary entries deleted for user ".$event->getUser()->getUID());
+            $deletedEntries = $this->mapper->deleteAllEntriesForUser($uid);
+            $this->logger->info("All $deletedEntries diary entries deleted for user ".$uid);
         } catch (Exception $e) {
-            $this->logger->error('Could not delete diary entries for user '.$event->getUser()->getUID());
+            $this->logger->error('Could not delete diary entries for user '.$uid, ['exception' => $e]);
         }
     }
 }

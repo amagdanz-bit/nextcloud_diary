@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OCA\Diary\Tests\Integration\Controller;
 
 use OCA\Diary\Controller\PageController;
@@ -21,15 +23,15 @@ class EntriesManipulationTest extends TestCase
         $app = new App('diary');
         $container = $app->getContainer();
 
-        $container->registerService('UserId', function ($c) {
+        $container->registerService('userId', function ($c) {
             return $this->userId;
         });
 
-        $this->controller = $container->query(PageController::class);
-        $this->mapper = $container->query(EntryMapper::class);
+        $this->controller = $container->get(PageController::class);
+        $this->mapper = $container->get(EntryMapper::class);
     }
 
-    public function testGetExistingEntry()
+    public function testGetExistingEntry(): void
     {
         $date = '2022-01-01';
         $content = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam';

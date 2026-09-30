@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OCA\Diary\Controller;
 
 use OCA\Diary\Db\EntryMapper;
 use OCA\Diary\Service\ConversionService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\DB\Exception;
 use OCP\IRequest;
@@ -14,53 +18,43 @@ use OCP\IRequest;
  */
 class ExportController extends Controller
 {
-    private $userId;
-    /**
-     * @var EntryMapper
-     */
-    private $mapper;
-    /**
-     * @var ConversionService
-     */
-    private $exportService;
-
-    public function __construct($AppName, IRequest $request, $UserId, EntryMapper $mapper, ConversionService $exportService)
-    {
-        parent::__construct($AppName, $request);
-        $this->userId = $UserId;
-        $this->mapper = $mapper;
-        $this->exportService = $exportService;
+    public function __construct(
+        string $appName,
+        IRequest $request,
+        private readonly ?string $userId,
+        private readonly EntryMapper $mapper,
+        private readonly ConversionService $exportService,
+    ) {
+        parent::__construct($appName, $request);
     }
 
     /**
      * Get all entries as one markdown file.
      *
-     * @NoAdminRequired
-     * @NoCSRFRequired
-     *
      * @throws Exception
      */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
     public function getMarkdown(): DataDownloadResponse
     {
-        $entries = $this->mapper->findAll($this->userId);
+        $entries = $this->mapper->findAll((string) $this->userId);
         $markdownString = $this->exportService->entriesToMarkdown($entries);
 
-        return new DataDownloadResponse($markdownString, 'diary.md', 'text/plain');
+        return new DataDownloadResponse($markdownString, 'diary.md', 'text/markdown');
     }
 
     /**
      * Get all entries as one PDF file.
      *
-     * @NoAdminRequired
-     * @NoCSRFRequired
-     *
      * @throws Exception
      */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
     public function getPdf(): DataDownloadResponse
     {
-        $entries = $this->mapper->findAll($this->userId);
+        $entries = $this->mapper->findAll((string) $this->userId);
         $pdfString = $this->exportService->entriesToPdf($entries);
 
-        return new DataDownloadResponse($pdfString, 'diary.pdf', 'text/plain');
+        return new DataDownloadResponse($pdfString, 'diary.pdf', 'application/pdf');
     }
 }
