@@ -1,10 +1,10 @@
-# Version 0.0.11- - "It's already that time again?"
+# Version 0.1.0 - PHP 8.3
 
-Last time I apologized for the lack of development because I needed to learn a
-couple of languages that are not PHP. The situation has gotten substantially worse.
-But here it is: Nextcloud 28 support!
+### Changes
 
-### Feature
-
-* Support for Nextcloud 28
-* Some updates in the testing process nobody care about
+* Requires PHP 8.3 or newer, supports Nextcloud 30 – 33
+* Updated PHP libraries: dompdf 3, league/commonmark 2
+* PDF export is rendered as one document (one page per entry) without libmergepdf/TCPDF
+* Markdown export now separates entries with an empty line
+* Controllers use PHP attributes instead of docblock annotations
+* Tests updated to PHPUnit 10

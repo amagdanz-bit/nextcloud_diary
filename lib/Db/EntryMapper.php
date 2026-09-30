@@ -1,14 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OCA\Diary\Db;
 
 use OCP\AppFramework\Db\DoesNotExistException;
-use OCP\AppFramework\Db\Entity;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
 use OCP\IDBConnection;
 
+/**
+ * @template-extends QBMapper<Entry>
+ */
 class EntryMapper extends QBMapper
 {
     public function __construct(IDBConnection $db)
@@ -19,13 +23,11 @@ class EntryMapper extends QBMapper
     /**
      * Find the diary entry for the given user or date.
      *
-     * @return mixed|Entity
-     *
      * @throws DoesNotExistException
      * @throws MultipleObjectsReturnedException
      * @throws Exception
      */
-    public function find(string $uid, string $date)
+    public function find(string $uid, string $date): Entry
     {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
@@ -42,7 +44,7 @@ class EntryMapper extends QBMapper
     /**
      * Find all diary entries for the given user id, ordered by date ascending.
      *
-     * @return array|Entity[]
+     * @return Entry[]
      *
      * @throws Exception
      */
@@ -62,7 +64,7 @@ class EntryMapper extends QBMapper
     /**
      * Find the last $amount number of entries ordered by date descending.
      *
-     * @return array|Entity[]
+     * @return Entry[]
      *
      * @throws Exception
      */
@@ -83,8 +85,9 @@ class EntryMapper extends QBMapper
     /**
      * Delete all entries for the given user.
      *
+     * @return int Number of deleted entries
+     *
      * @throws Exception
-     * @returns int Number of deleted entries
      */
     public function deleteAllEntriesForUser(string $uid): int
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OCA\Diary\Tests\Integration\Controller;
 
 use OCA\Diary\Db\Entry;
@@ -19,14 +21,14 @@ class EntriesFinderTest extends TestCase
         $app = new App('diary');
         $container = $app->getContainer();
 
-        $container->registerService('UserId', function ($c) {
+        $container->registerService('userId', function ($c) {
             return $this->userId;
         });
 
-        $this->mapper = $container->query(EntryMapper::class);
+        $this->mapper = $container->get(EntryMapper::class);
     }
 
-    public function testGetExistingEntry()
+    public function testGetExistingEntry(): void
     {
         $date = '2022-01-01';
         $content = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam';
@@ -67,7 +69,7 @@ class EntriesFinderTest extends TestCase
         $this->mapper->delete($entry2);
     }
 
-    public function testGetExistingEntries()
+    public function testGetExistingEntries(): void
     {
         $date = '2022-02-01';
         $content = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam';

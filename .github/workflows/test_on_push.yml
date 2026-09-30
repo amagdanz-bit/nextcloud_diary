@@ -12,17 +12,12 @@ jobs:
     name: "Run unit tests"
     strategy:
       matrix:
-        php-versions: [ '8.0', '8.1', '8.2', '8.3' ]
-        nextcloud: [ 'stable25', 'stable27', 'stable28' ]
+        php-versions: [ '8.3', '8.4' ]
+        nextcloud: [ 'stable30', 'stable31', 'stable32' ]
         database: [ 'sqlite' ]
-        phpunit-version: [ '9.5' ]
         exclude:
-          - php-versions: '8.2'
-            nextcloud: 'stable25'
-          - php-versions: '8.3'
-            nextcloud: 'stable25'
-          - php-versions: '8.3'
-            nextcloud: 'stable27'
+          - php-versions: '8.4'
+            nextcloud: 'stable30'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

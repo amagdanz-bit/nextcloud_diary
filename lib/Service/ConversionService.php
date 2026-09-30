@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OCA\Diary\Service;
 
 use Dompdf\Dompdf;
-use iio\libmergepdf\Merger;
+use Dompdf\Options;
 use League\CommonMark\CommonMarkConverter;
 use OCA\Diary\Db\Entry;
 
@@ -15,17 +17,17 @@ class ConversionService
     /**
      * Convert an array of entries into one PDF encoded as string.
      *
-     * @param array|Entry[] $entries
+     * @param Entry[] $entries
      */
     public function entriesToPdf(array $entries): string
     {
-        $pdfMerger = new Merger();
-        /** @var Entry $entry */
-        foreach ($entries as $entry) {
-            $pdfMerger->addRaw($this->entryToPDF($entry));
-        }
+        // Render every entry on its own page within one single document.
+        $pages = array_map(
+            fn (Entry $entry): string => '<div class="entry">'.$this->markdownToHTML($this->entryToMarkdown($entry)).'</div>',
+            $entries
+        );
 
-        return $pdfMerger->merge();
+        return $this->htmlToPDF(implode("\n", $pages));
     }
 
     /**
@@ -41,16 +43,12 @@ class ConversionService
 
     /**
      * Convert an array of entries into one markdown file.
+     *
+     * @param Entry[] $entries
      */
     public function entriesToMarkdown(array $entries): string
     {
-        $markdownString = '';
-        /** @var Entry $entry */
-        foreach ($entries as $entry) {
-            $markdownString .= $this->entryToMarkdown($entry);
-        }
-
-        return $markdownString;
+        return implode("\r\n\r\n", array_map($this->entryToMarkdown(...), $entries));
     }
 
     /**
@@ -72,19 +70,27 @@ class ConversionService
     {
         $converter = new CommonMarkConverter();
 
-        return $converter->convertToHtml($markdown);
+        return $converter->convert($markdown)->getContent();
     }
 
     /**
      * Convert HTML into a PDF encoded as a string.
      */
-    public function htmlToPDF(string $html): ?string
+    public function htmlToPDF(string $html): string
     {
-        $pdf = new Dompdf();
+        $options = new Options();
+        // Never load remote resources (e.g. images linked in an entry) while rendering.
+        $options->setIsRemoteEnabled(false);
+
+        $pdf = new Dompdf($options);
         $pdf->setPaper('A4', 'portrait');
-        $pdf->loadHtml($html);
+        $pdf->loadHtml(
+            '<html><head><meta charset="utf-8"><style>.entry + .entry { page-break-before: always; }</style></head>'
+            .'<body>'.$html.'</body></html>',
+            'UTF-8'
+        );
         $pdf->render();
 
-        return $pdf->output();
+        return (string) $pdf->output();
     }
 }
