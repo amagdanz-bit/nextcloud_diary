@@ -7,6 +7,7 @@ OC.L10N.register(
     "Export" : "Exportieren",
     "as PDF" : "als PDF",
     "as Markdown" : "als Markdown",
-    "Write your entry here" : "Schreibe hier deinen Eintrag "
+    "Write your entry here" : "Schreibe hier deinen Eintrag ",
+    "Use template" : "Vorlage verwenden"
 },
 "nplurals=2; plural=(n != 1);");
