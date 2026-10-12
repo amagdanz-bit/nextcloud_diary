@@ -8,6 +8,17 @@ OC.L10N.register(
     "as PDF" : "als PDF",
     "as Markdown" : "als Markdown",
     "Write your entry here" : "Schreiben Sie Ihren Eintrag hier",
-    "Use template" : "Vorlage verwenden"
+    "Use template" : "Vorlage verwenden",
+    "Formatting" : "Formatierung",
+    "Bold" : "Fett",
+    "Italic" : "Kursiv",
+    "Strikethrough" : "Durchgestrichen",
+    "Heading" : "Überschrift",
+    "Quote" : "Zitat",
+    "Bulleted list" : "Aufzählung",
+    "Numbered list" : "Nummerierte Liste",
+    "Link" : "Link",
+    "Preview" : "Vorschau",
+    "Markdown guide" : "Markdown-Hilfe"
 },
 "nplurals=2; plural=(n != 1);");
