@@ -13,11 +13,15 @@ jobs:
     strategy:
       matrix:
         php-versions: [ '8.3', '8.4' ]
-        nextcloud: [ 'stable30', 'stable31', 'stable32' ]
+        nextcloud: [ 'stable30', 'stable31', 'stable32', 'stable33', 'stable34', 'stable35' ]
         database: [ 'sqlite' ]
         exclude:
           - php-versions: '8.4'
             nextcloud: 'stable30'
+        include:
+          - php-versions: '8.5'
+            nextcloud: 'stable35'
+            database: 'sqlite'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

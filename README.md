@@ -11,7 +11,13 @@ A (currently) very simple diary for Nextcloud
 ## Requirements
 
 * PHP 8.3 or newer
-* Nextcloud 30 – 33
+* Nextcloud 30 – 35
+
+## Templates
+
+An empty entry offers a "Use template" menu next to the date. A template inserts a Markdown skeleton (e.g. a few
+questions as headings) into the editor; after that it is a normal entry. Templates are defined in `src/templates.js`,
+add an object with `id`, `name` and Markdown `content` there and rebuild the app to offer more.
 
 ## Installing on your own server
 
